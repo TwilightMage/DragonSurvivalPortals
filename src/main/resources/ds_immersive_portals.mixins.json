@@ -1,0 +1,27 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.drakosha.dsportals.mixin",
+  "plugin": "dev.drakosha.dsportals.mixin.DsPortalsMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "DragonSizeHandlerMixin",
+    "EntityLevelAccessor",
+    "breath.DragonBreathTargetMixin"
+  ],
+  "client": [
+    "client.AbstractClientPlayerAccessor",
+    "client.ClientDragonRendererMixin",
+    "client.CrossPortalEntityRendererDragonMixin",
+    "client.CrossPortalViewRenderingMixin",
+    "client.FirstPersonBodyMixin",
+    "client.IrisShaderPackMixin",
+    "client.PacketRedirectionClientMixin",
+    "breath.client.ClientProxyBreathMixin",
+    "breath.client.ParticleAccessor",
+    "breath.client.ParticleEngineBreathMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

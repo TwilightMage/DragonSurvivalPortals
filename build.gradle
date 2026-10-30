@@ -1,0 +1,196 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+version = "${minecraft_version}-${mod_version}"
+group = mod_group_id
+
+base {
+    // ds_immersive_portals-neoforge-1.21.1-<version>.jar
+    archivesName = "${mod_id}-neoforge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+configurations {
+    // Mods copied into run/*/mods for the test runs (production jars, nothing on the classpath)
+    testMods {
+        canBeConsumed = false
+        transitive = false
+    }
+}
+
+repositories {
+    // CurseForge files as maven artifacts: curse.maven:<slug>-<projectId>:<fileId>
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'CurseMaven'
+                url = 'https://cursemaven.com'
+            }
+        }
+        filter {
+            includeGroup 'curse.maven'
+        }
+    }
+}
+
+neoForge {
+    version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    // Test runs: an offline flat server with RCON and two clients that join it automatically
+    runs {
+        server {
+            server()
+            gameDirectory = project.file('run/server')
+            programArgument '--nogui'
+        }
+        client {
+            client()
+            gameDirectory = project.file('run/client')
+            programArguments.addAll('--quickPlayMultiplayer', '127.0.0.1:25565', '--username', 'DragonTester', '--width', '1280', '--height', '720')
+        }
+        client2 {
+            client()
+            gameDirectory = project.file('run/client2')
+            programArguments.addAll('--quickPlayMultiplayer', '127.0.0.1:25565', '--username', 'Watcher', '--width', '1280', '--height', '720')
+        }
+
+        configureEach {
+            // -PdisableMod: load the mod but apply none of its mixins (before/after comparisons)
+            if (project.hasProperty('disableMod')) {
+                systemProperty 'ds_immersive_portals.disable', 'true'
+            }
+            // -PmixinExport: transformed classes are written to <run dir>/.mixin.out
+            if (project.hasProperty('mixinExport')) {
+                systemProperty 'mixin.debug.export', 'true'
+            }
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+dependencies {
+    // The two mods we patch. compileOnly: this mod does not ship or jar-in-jar them.
+    compileOnly "curse.maven:dragon-survival-420799:${dragon_survival_file_id}"
+    compileOnly "curse.maven:${immersive_portals_project}:${immersive_portals_file_id}"
+    // Dragon Survival's DragonEntity is a GeckoLib entity
+    compileOnly "curse.maven:geckolib-388172:${geckolib_file_id}"
+
+    // -PipUpstream: original Immersive Portals 6.0.7 instead of the CE build
+    if (project.hasProperty('ipUpstream')) {
+        testMods "curse.maven:immersive-portals-for-forge-355440:${immersive_portals_upstream_file_id}"
+    } else {
+        testMods "curse.maven:${immersive_portals_project}:${immersive_portals_file_id}"
+    }
+    testMods "curse.maven:cloth-config-348521:${cloth_config_file_id}"
+    testMods "curse.maven:dragon-survival-420799:${dragon_survival_file_id}"
+    testMods "curse.maven:geckolib-388172:${geckolib_file_id}"
+}
+
+// Each test run gets exactly the testMods jars in its mods folder before it starts
+['server': 'run/server', 'client': 'run/client', 'client2': 'run/client2'].each { runName, dir ->
+    def syncMods = tasks.register("${runName}Mods", Sync) {
+        from configurations.testMods
+        into file("${dir}/mods")
+    }
+    tasks.matching { it.name == "run${runName.capitalize()}" }.configureEach {
+        dependsOn syncMods
+    }
+}
+
+// Offline flat test world with RCON (port 25575, password dptest), players start human
+def prepareServer = tasks.register('prepareServer') {
+    def dir = file('run/server')
+    outputs.upToDateWhen { false }
+    doLast {
+        new File(dir, 'config').mkdirs()
+        new File(dir, 'eula.txt').text = 'eula=true\n'
+        def properties = new File(dir, 'server.properties')
+        if (!properties.exists()) {
+            properties.text = [
+                'online-mode=false', 'enable-rcon=true', 'rcon.port=25575', 'rcon.password=dptest',
+                'server-port=25565', 'level-type=minecraft\\:flat', 'generate-structures=false', 'spawn-protection=0',
+                'difficulty=peaceful', 'view-distance=6', 'simulation-distance=6', 'motd=DS x IP test',
+            ].join('\n') + '\n'
+        }
+        def dsConfig = new File(dir, 'config/dragonsurvival-server.toml')
+        if (!dsConfig.exists()) {
+            dsConfig.text = '[general]\n\tstart_with_dragon_choice = false\n'
+        }
+    }
+}
+tasks.matching { it.name == 'runServer' }.configureEach {
+    dependsOn prepareServer
+}
+
+// First-launch screens (vanilla accessibility onboarding, Immersive Portals welcome) would block the auto-join
+['client': 'run/client', 'client2': 'run/client2'].each { runName, dir ->
+    def prepareClient = tasks.register("prepare${runName.capitalize()}") {
+        outputs.upToDateWhen { false }
+        doLast {
+            def options = file("${dir}/options.txt")
+            options.parentFile.mkdirs()
+            // test clients run in the background and must keep simulating at full speed
+            def forced = ['onboardAccessibility:false', 'pauseOnLostFocus:false', 'inactivityFpsLimit:"minimized"']
+            def lines = options.exists() ? options.readLines().findAll { line -> !forced.any { line.startsWith(it.split(':')[0] + ':') } } : []
+            options.text = (lines + forced).join('\n') + '\n'
+
+            def config = file("${dir}/config/immersive_portals.json")
+            config.parentFile.mkdirs()
+            def values = config.exists() ? new groovy.json.JsonSlurper().parse(config) : [:]
+            values.initialScreenShown = true
+            values.checkModInfoFromInternet = false
+            values.enableUpdateNotification = false
+            config.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(values))
+        }
+    }
+    tasks.matching { it.name == "run${runName.capitalize()}" }.configureEach {
+        dependsOn prepareClient
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Fills ${...} placeholders in neoforge.mods.toml from gradle.properties
+def modProperties = [
+    mod_id     : mod_id,
+    mod_name   : mod_name,
+    mod_version: mod_version,
+    mod_authors: mod_authors,
+    mod_license: mod_license,
+]
+
+tasks.named('processResources', ProcessResources) {
+    inputs.properties modProperties
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand modProperties
+    }
+}
+
+tasks.named('jar', Jar) {
+    from('LICENSE') {
+        rename { "LICENSE_${mod_id}" }
+    }
+    manifest.attributes(
+        'Specification-Title'   : mod_id,
+        'Specification-Vendor'  : mod_authors,
+        'Specification-Version' : '1',
+        'Implementation-Title'  : mod_name,
+        'Implementation-Version': mod_version,
+        'Implementation-Vendor' : mod_authors,
+    )
+}

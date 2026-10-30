@@ -1,0 +1,62 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "${mod_license}"
+
+[[mods]]
+    modId = "${mod_id}"
+    version = "${mod_version}"
+    displayName = "${mod_name}"
+    authors = "${mod_authors}"
+    logoFile = "logo.png"
+    # Pure mixin mod without network channels: the server list should not flag a missing/different copy
+    displayTest = "IGNORE_ALL_VERSION"
+    description = '''
+Makes Dragon Survival dragons work with Immersive Portals (NeoForge 1.21.1):
+ - dragons seen through a portal look like dragons (size, wings, flight are synced), dragon projectiles survive crossing;
+ - dragons are not forced to crouch/crawl or stuck when walking into a portal;
+ - the whole dragon model is cut at the portal and shown on the other side; no first-person body inside portal views;
+ - breath goes through portals and hits what is on the other side, not what is hidden behind the portal;
+ - the third-person camera keeps its distance behind a portal; Iris without a shader pack keeps cross-portal rendering.
+Works with Immersive Portals, Immersive Portals - CE and the Sodium/Iris/DH Compat Fork. Every fix has a switch in the config.
+'''
+
+[[mixins]]
+    config = "ds_immersive_portals.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId = "neoforge"
+    type = "required"
+    versionRange = "[21.1.0,)"
+    ordering = "NONE"
+    side = "BOTH"
+
+[[dependencies.${mod_id}]]
+    modId = "minecraft"
+    type = "required"
+    versionRange = "[1.21.1]"
+    ordering = "NONE"
+    side = "BOTH"
+
+# Mixin targets checked with javap against 2.0.16 ... 2.0.71
+[[dependencies.${mod_id}]]
+    modId = "dragonsurvival"
+    type = "required"
+    versionRange = "[2.0.16,)"
+    ordering = "AFTER"
+    side = "BOTH"
+
+# Upstream 6.0.3-6.0.7, the compat fork 6.0.7 and CE 6.0.8-6.1.3.1 checked; their jar versions differ in format
+[[dependencies.${mod_id}]]
+    modId = "imm_ptl"
+    type = "required"
+    versionRange = "*"
+    ordering = "AFTER"
+    side = "BOTH"
+
+# Optional: carries the general Immersive Portals fixes itself; this mod then leaves them to it
+[[dependencies.${mod_id}]]
+    modId = "immersive_portals_improvements"
+    type = "optional"
+    versionRange = "*"
+    ordering = "NONE"
+    side = "BOTH"
