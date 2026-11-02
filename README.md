@@ -1,7 +1,7 @@
 # Dragon Survival x Immersive Portals
 
-A small NeoForge 1.21.1 mod that makes [Dragon Survival](https://www.curseforge.com/minecraft/mc-mods/dragon-survival)
-dragons work with [Immersive Portals](https://www.curseforge.com/minecraft/mc-mods/immersive-portals-for-forge)
+A small NeoForge 1.21.1 mod that makes [Dragon Survival](https://www.curseforge.com/projects/420799)
+dragons work with [Immersive Portals](https://www.curseforge.com/projects/355440)
 (also Immersive Portals - CE and the Sodium/Iris/DH Compat Fork). Pure mixin mod, needed on both client and server.
 
 ## What it fixes
@@ -17,13 +17,13 @@ dragons work with [Immersive Portals](https://www.curseforge.com/minecraft/mc-mo
 
 Every fix can be switched off in `config/ds_immersive_portals.toml` (a switched-off fix is not patched in at all;
 restart after changing). `dragon_sync`, `third_person_camera` and `iris_projections` are general Immersive Portals
-fixes that [Immersive Portals Improvements](https://www.curseforge.com/minecraft/mc-mods/immersive-portals-improvements)
+fixes that Immersive Portals Improvements
 also carries: when it is installed, this mod leaves them to it.
 
 ## Tested with
 
-Minecraft 1.21.1, NeoForge 21.1.264, Dragon Survival 2.0.71 (mixin targets checked against 2.0.16+), GeckoLib 4.8.3,
-Immersive Portals - CE 6.1.3.1 (also upstream 6.0.7 and the compat fork 6.0.7).
+Minecraft 1.21.1, NeoForge 21.1.264, Dragon Survival 2.0.71, GeckoLib 4.8.3, Immersive Portals - CE 6.1.3.1.
+Other versions may work, but were not tested.
 
 ## Building
 
