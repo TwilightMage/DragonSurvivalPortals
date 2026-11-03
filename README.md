@@ -41,7 +41,8 @@ without applying any of its mixins, `-PmixinExport` writes the transformed class
 
 ## License
 
-MIT, see `LICENSE`.
+MIT, see `LICENSE`. This covers the code, not the logo: `src/main/resources/logo.png` and `release/curseforge_avatar.png`
+contain the Elder Dragon Bone texture from Dragon Survival, which is under the Dragon Survival License.
 
 ---
 

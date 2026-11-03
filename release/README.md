@@ -3,6 +3,7 @@
 - `curseforge_description.md` — описание страницы (EN + RU), вставить в редактор описания в режиме Markdown.
 - Файл мода: `build/libs/ds_immersive_portals-neoforge-1.21.1-<версия>.jar` (собирается `gradlew build`).
 - Changelog: `../CHANGELOG.md`.
+- `curseforge_avatar.png` — аватар проекта (512x512). Логотип рисует `tools/make_logo.py` из текстуры в jar Dragon Survival.
 
 ## Поля проекта
 
